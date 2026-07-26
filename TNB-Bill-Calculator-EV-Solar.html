@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estimated Calculator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 860px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #1a237e, #0d47a1);
+            color: white;
+            padding: 24px 30px;
+            text-align: center;
+        }
+        .header h1 { font-size: 1.4em; margin-bottom: 4px; }
+        .header p { opacity: 0.85; font-size: 0.85em; }
+        .content { padding: 24px; }
+        .section {
+            margin-bottom: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 18px;
+            background: #fafafa;
+        }
+        .section h2 {
+            font-size: 1.05em;
+            color: #1a237e;
+            margin-bottom: 14px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+        .form-group { display: flex; flex-direction: column; }
+        .form-group label { font-size: 0.8em; color: #555; margin-bottom: 3px; font-weight: 500; }
+        .form-group input, .form-group select {
+            padding: 9px 11px; border: 1px solid #ccc; border-radius: 8px; font-size: 0.92em;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none; border-color: #1a237e; box-shadow: 0 0 0 2px rgba(26,35,126,0.1);
+        }
+        .appliance-row {
+            display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 70px;
+            gap: 6px; align-items: center; margin-bottom: 6px; font-size: 0.83em;
+        }
+        .appliance-row.hdr { font-weight: 600; color: #333; border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-bottom: 10px; }
+        .appliance-row input {
+            padding: 5px 7px; border: 1px solid #ccc; border-radius: 5px; font-size: 0.88em; text-align: center;
+        }
+        .appliance-row input:first-child { text-align: left; }
+        .btn-add {
+            background: #e8eaf6; color: #1a237e; border: 1px dashed #7986cb;
+            padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8em; margin: 3px;
+        }
+        .btn-add:hover { background: #c5cae9; }
+        .btn-rm { background: #ffebee; color: #c62828; border: none; padding: 3px 8px; border-radius: 5px; cursor: pointer; font-size: 0.75em; }
+        .btn-rm:hover { background: #ffcdd2; }
+        .btn-calc {
+            display: block; width: 100%; padding: 13px;
+            background: linear-gradient(135deg, #1a237e, #0d47a1);
+            color: white; border: none; border-radius: 10px;
+            font-size: 1.05em; font-weight: 600; cursor: pointer; margin-top: 18px;
+        }
+        .btn-calc:hover { opacity: 0.95; }
+        .results { display: none; margin-top: 20px; }
+        .results.show { display: block; }
+        .bill-card {
+            border: 2px solid #1a237e; border-radius: 12px; overflow: hidden; margin-bottom: 16px;
+        }
+        .bill-card-header { background: #1a237e; color: white; padding: 12px 18px; font-weight: 600; }
+        .bill-card-body { padding: 16px 18px; }
+        .row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.88em; }
+        .row:last-child { border-bottom: none; }
+        .row .l { color: #555; }
+        .row .v { font-weight: 600; color: #1a237e; }
+        .total-row {
+            background: #e8eaf6; padding: 12px 18px; border-radius: 8px; margin-top: 10px;
+            display: flex; justify-content: space-between; font-size: 1.05em; font-weight: 700;
+        }
+        .total-row .v { color: #c62828; }
+        .solar-card {
+            background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+            border: 2px solid #2e7d32; border-radius: 12px; padding: 18px;
+        }
+        .solar-card h3 { color: #2e7d32; margin-bottom: 12px; font-size: 1em; }
+        .solar-card .row .v { color: #1b5e20; }
+        .savings-highlight {
+            background: #2e7d32; color: white; padding: 12px 18px; border-radius: 8px;
+            margin-top: 10px; display: flex; justify-content: space-between;
+            font-size: 1.05em; font-weight: 700;
+        }
+        .ev-section { background: #fff8e1; border-color: #ffa000; }
+        .checkbox-group { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+        .checkbox-group input[type="checkbox"] { width: 17px; height: 17px; accent-color: #1a237e; }
+        .ev-details { display: none; }
+        .ev-details.show { display: block; }
+        .note { font-size: 0.75em; color: #888; margin-top: 5px; font-style: italic; }
+        .info-bar {
+            background: #e3f2fd; border-radius: 8px; padding: 10px 14px;
+            margin-bottom: 16px; font-size: 0.8em; color: #1565c0;
+        }
+        .ev-preview {
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: #fff3e0;
+            border-left: 3px solid #ffa000;
+            border-radius: 4px;
+            font-size: 0.85em;
+            color: #e65100;
+        }
+        .login-trigger { cursor: pointer; opacity: 0.4; font-size: 0.7em; color: #888; }
+        .login-trigger:hover { opacity: 0.7; }
+        .login-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .login-modal-content { background: white; padding: 24px; border-radius: 12px; min-width: 280px; display: flex; flex-direction: column; gap: 10px; }
+        .login-modal-content input { padding: 9px 11px; border: 1px solid #ccc; border-radius: 8px; font-size: 0.92em; }
+        .login-modal-content button { padding: 9px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        .login-modal-content button:first-of-type { background: #1a237e; color: white; border: none; }
+        .btn-close-modal { background: #f5f5f5; color: #333; border: 1px solid #ccc; }
+        .btn-logout { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75em; }
+        .kwh-breakdown-card { border: 2px solid #ff8f00; border-radius: 12px; overflow: hidden; margin-bottom: 16px; }
+        .kwh-breakdown-header { background: #ff8f00; color: white; padding: 12px 18px; font-weight: 600; }
+        .kwh-breakdown-body { padding: 16px 18px; }
+        .kwh-bar-container { display: flex; height: 28px; border-radius: 6px; overflow: hidden; margin-bottom: 12px; background: #f5f5f5; }
+        .kwh-bar-segment { transition: width 0.3s ease; }
+        .kwh-bar-segment.household { background: #1a237e; }
+        .kwh-bar-segment.ev { background: #ffa000; }
+        .kwh-breakdown-legend { display: flex; flex-direction: column; gap: 6px; }
+        .kwh-legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.88em; }
+        .kwh-legend-item.total { border-top: 1px solid #e0e0e0; padding-top: 6px; margin-top: 4px; }
+        .kwh-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+        .kwh-dot.household { background: #1a237e; }
+        .kwh-dot.ev { background: #ffa000; }
+        .kwh-legend-value { margin-left: auto; font-weight: 600; color: #333; }
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>Estimated Calculator</h1>
+        <p>New RP4 Tariff Structure (Effective 1 July 2025)</p>
+    </div>
+    <div class="content">
+        <div class="info-bar">
+            <strong>TNB Tariff (RP4, effective Jul 2025):</strong> Energy 27.03 sen/kWh (37.03 if usage &ge; 1500 kWh) + Capacity 4.55 + Network 12.85 + RM10 retail (fixed) | Tax applies &gt; 600 kWh
+            <br><strong>Current AFA/ICPT:</strong> <span id="afaDisplay">-</span> sen/kWh (auto-detected for <span id="afaMonth">-</span>)
+        </div>
+
+        <!-- Appliances -->
+        <div class="section">
+            <h2>🏠 Household Appliances</h2>
+            <div class="appliance-row hdr"><span>Appliance</span><span>Watt</span><span>Hrs/Day</span><span>Qty</span><span></span></div>
+            <div id="appList"></div>
+            <div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:10px;">
+                <button class="btn-add" onclick="add('Aircond 1HP (Inv)',600,8,1)">AC 1HP</button>
+                <button class="btn-add" onclick="add('Aircond 1.5HP (Inv)',900,8,1)">AC 1.5HP</button>
+                <button class="btn-add" onclick="add('Aircond 2HP (Inv)',1200,8,1)">AC 2HP</button>
+                <button class="btn-add" onclick="add('Aircond 2.5HP (Inv)',1500,8,1)">AC 2.5HP</button>
+                <button class="btn-add" onclick="add('Aircond 1HP (Non-Inv)',900,8,1)">AC 1HP NI</button>
+                <button class="btn-add" onclick="add('Aircond 1.5HP (Non-Inv)',1300,8,1)">AC 1.5HP NI</button>
+                <button class="btn-add" onclick="add('Aircond 2HP (Non-Inv)',1800,8,1)">AC 2HP NI</button>
+                <button class="btn-add" onclick="add('Aircond 2.5HP (Non-Inv)',2200,8,1)">AC 2.5HP NI</button>
+                <button class="btn-add" onclick="add('Refrigerator',150,24,1)">Fridge</button>
+                <button class="btn-add" onclick="add('Washing Machine',500,1,1)">Washing</button>
+                <button class="btn-add" onclick="add('Dryer',2500,1,1)">Dryer</button>
+                <button class="btn-add" onclick="add('Dishwasher',1800,1.5,1)">Dishwasher</button>
+                <button class="btn-add" onclick="add('Water Heater',3000,0.5,1)">Water Heater</button>
+                <button class="btn-add" onclick="add('Instant Heater',3500,0.3,1)">Instant Heater</button>
+                <button class="btn-add" onclick="add('Pool Pump',1100,8,1)">Pool Pump</button>
+                <button class="btn-add" onclick="add('Pool Heater',3500,6,1)">Pool Heater</button>
+                <button class="btn-add" onclick="add('LED Lights',10,8,10)">LED Lights</button>
+                <button class="btn-add" onclick="add('TV 55 inch',120,5,1)">TV</button>
+                <button class="btn-add" onclick="add('Ceiling Fan',75,10,1)">Ceiling Fan</button>
+                <button class="btn-add" onclick="add('Standing Fan',50,8,1)">Standing Fan</button>
+                <button class="btn-add" onclick="add('Rice Cooker',700,1,1)">Rice Cooker</button>
+                <button class="btn-add" onclick="add('Induction Cooker',2000,1,1)">Induction</button>
+                <button class="btn-add" onclick="add('Oven',2000,0.5,1)">Oven</button>
+                <button class="btn-add" onclick="add('Microwave',1000,0.3,1)">Microwave</button>
+                <button class="btn-add" onclick="add('Iron',1000,0.5,1)">Iron</button>
+                <button class="btn-add" onclick="add('Vacuum',600,0.5,1)">Vacuum</button>
+                <button class="btn-add" onclick="add('Computer',150,6,1)">Computer</button>
+                <button class="btn-add" onclick="add('WiFi Router',12,24,1)">Router</button>
+                <button class="btn-add" onclick="add('CCTV',50,24,1)">CCTV</button>
+                <button class="btn-add" onclick="add('Auto Gate',100,0.5,1)">Auto Gate</button>
+                <button class="btn-add" onclick="add('Air Purifier',50,12,1)">Air Purifier</button>
+                <button class="btn-add" onclick="add('Dehumidifier',300,8,1)">Dehumidifier</button>
+                <button class="btn-add" onclick="add('Coffee Machine',1200,0.3,1)">Coffee Machine</button>
+                <button class="btn-add" onclick="add('Electric Kettle',1500,0.2,1)">Kettle</button>
+                <button class="btn-add" onclick="add('Custom',0,0,1)">+ Custom</button>
+            </div>
+        </div>
+
+        <!-- Direct kWh -->
+        <div class="section">
+            <h2>⚡ Or Enter Monthly kWh Directly</h2>
+            <div class="form-group" style="max-width:300px;">
+                <label>Monthly Usage (kWh)</label>
+                <input type="number" id="directKwh" placeholder="e.g. 900">
+            </div>
+            <p class="note">Overrides appliance calculation if filled in.</p>
+        </div>
+
+        <!-- EV -->
+        <div class="section ev-section">
+            <h2>🚗 EV Charging (Home)</h2>
+            <div class="checkbox-group">
+                <input type="checkbox" id="evOn" onchange="toggleEV()">
+                <label for="evOn" style="font-weight:600;">Has / planning to get an EV</label>
+            </div>
+            <div id="evDet" class="ev-details">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>EV Model / Battery Size</label>
+                        <select id="evBatt" onchange="updateEff()">
+                            <option value="38.5" data-eff="14">Neta V (38.5 kWh)</option>
+                            <option value="44.9" data-eff="13">BYD Dolphin (44.9 kWh)</option>
+                            <option value="47.8" data-eff="14">ORA Good Cat (47.8 kWh)</option>
+                            <option value="60" data-eff="15" selected>Tesla Model 3 (60 kWh)</option>
+                            <option value="60.5" data-eff="16">BYD Atto 3 (60.5 kWh)</option>
+                            <option value="61" data-eff="15">Chery Omoda E5 (61 kWh)</option>
+                            <option value="62" data-eff="16">Smart #1 (62 kWh)</option>
+                            <option value="64" data-eff="16">Volvo EX30 (64 kWh)</option>
+                            <option value="64.7" data-eff="17">BMW iX1 (64.7 kWh)</option>
+                            <option value="65" data-eff="16">Proton eMas 7 (65 kWh)</option>
+                            <option value="66" data-eff="16">Zeekr X (66 kWh)</option>
+                            <option value="66" data-eff="17">Smart #3 (66 kWh)</option>
+                            <option value="66.5" data-eff="17">Mercedes EQA (66.5 kWh)</option>
+                            <option value="66.5" data-eff="18">Mercedes EQB (66.5 kWh)</option>
+                            <option value="72.6" data-eff="17">Hyundai Ioniq 5 (72.6 kWh)</option>
+                            <option value="75" data-eff="16">Tesla Model Y (75 kWh)</option>
+                            <option value="77.4" data-eff="17">Kia EV6 (77.4 kWh)</option>
+                            <option value="77.4" data-eff="14">Hyundai Ioniq 6 (77.4 kWh)</option>
+                            <option value="78" data-eff="19">Volvo XC40 Recharge (78 kWh)</option>
+                            <option value="80" data-eff="19">BMW iX3 (80 kWh)</option>
+                            <option value="81.2" data-eff="18">BMW i5 (81.2 kWh)</option>
+                            <option value="82.5" data-eff="16">BYD Seal (82.5 kWh)</option>
+                            <option value="90.6" data-eff="19">Mercedes EQE (90.6 kWh)</option>
+                            <option value="93.4" data-eff="21">Porsche Taycan (93.4 kWh)</option>
+                            <option value="99.8" data-eff="20">Kia EV9 (99.8 kWh)</option>
+                            <option value="100" data-eff="20">Tesla Model S (100 kWh)</option>
+                            <option value="101.7" data-eff="20">BMW i7 (101.7 kWh)</option>
+                            <option value="106" data-eff="22">Audi Q8 e-tron (106 kWh)</option>
+                            <option value="107.8" data-eff="19">Mercedes EQS (107.8 kWh)</option>
+                            <option value="112" data-eff="22">Lotus Eletre (112 kWh)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Daily Driving (km)</label>
+                        <input type="number" id="evKm" value="40">
+                    </div>
+                    <div class="form-group">
+                        <label>Efficiency (kWh/100km)</label>
+                        <input type="number" id="evEff" value="15" step="0.5">
+                    </div>
+                    <div class="form-group">
+                        <label>Charging Loss (%)</label>
+                        <input type="number" id="evLoss" value="12">
+                    </div>
+                </div>
+                <div class="ev-preview" id="evPreview" style="display:none;">
+                    Estimated monthly EV consumption: <strong><span id="evPreviewVal">0</span> kWh</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Solar Settings -->
+        <div class="section" id="solarSection">
+            <h2>☀️ Solar Settings</h2>
+            <button id="logoutBtn" class="btn-logout" onclick="doLogout()" style="display:none; float:right; margin-top:-24px;">Logout</button>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Peak Sun Hours (PSH)</label>
+                    <input type="number" id="psh" value="3.36" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Panel Wattage (Wp)</label>
+                    <input type="number" id="panelWp" value="630" step="5">
+                </div>
+                <div class="form-group">
+                    <label>Number of Panels (0 = auto recommend)</label>
+                    <input type="number" id="numPanels" value="0" min="0" max="100">
+                </div>
+                <div class="form-group">
+                    <label>Self-Consumption Ratio (%)</label>
+                    <input type="number" id="selfConsume" value="33" min="0" max="100">
+                </div>
+                <div class="form-group">
+                    <label>AFA Override (sen/kWh, 0 = use auto)</label>
+                    <input type="number" id="afaOverride" value="0" step="0.01" min="0">
+                </div>
+            </div>
+            <p class="note">Auto-recommend sizes system to match consumption minus base load (300 kWh). Set panels manually to override. Self-consumed = consumption × SC ratio. Export offset matches client's energy rate. AFA Override: enter a value to override auto-detected rate (0 = use current month's rate from lookup table).</p>
+        </div>
+
+        <button class="btn-calc" onclick="calc()">Calculate Bill &amp; Solar Savings</button>
+
+        <!-- Results -->
+        <div id="res" class="results">
+            <div class="kwh-breakdown-card" id="kwhBreakdown" style="display:none;">
+                <div class="kwh-breakdown-header">⚡ Monthly kWh Breakdown</div>
+                <div class="kwh-breakdown-body">
+                    <div class="kwh-bar-container">
+                        <div class="kwh-bar-segment household" id="kwhBarHouse"></div>
+                        <div class="kwh-bar-segment ev" id="kwhBarEv"></div>
+                    </div>
+                    <div class="kwh-breakdown-legend">
+                        <div class="kwh-legend-item">
+                            <span class="kwh-dot household"></span>
+                            <span class="kwh-legend-label">🏠 Household</span>
+                            <span class="kwh-legend-value" id="kwhHouseVal">-</span>
+                        </div>
+                        <div class="kwh-legend-item" id="kwhEvRow">
+                            <span class="kwh-dot ev"></span>
+                            <span class="kwh-legend-label">🚗 EV Charging</span>
+                            <span class="kwh-legend-value" id="kwhEvVal">-</span>
+                        </div>
+                        <div class="kwh-legend-item total">
+                            <span class="kwh-legend-label"><strong>Total</strong></span>
+                            <span class="kwh-legend-value" id="kwhTotalVal"><strong>-</strong></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bill-card">
+                <div class="bill-card-header">Monthly Bill (Before Solar)</div>
+                <div class="bill-card-body">
+                    <div class="row"><span class="l">Monthly Consumption</span><span class="v" id="rKwh">-</span></div>
+                    <div class="row" id="rEvKwh" style="display:none;"><span class="l">EV Charging Consumption</span><span class="v" id="rEvKwhVal">-</span></div>
+                    <div class="row"><span class="l">Energy Charge (27.03 sen | 37.03 if &ge;1500 kWh)</span><span class="v" id="rEnergy">-</span></div>
+                    <div class="row" id="rAfa" style="display:none;"><span class="l">AFA / ICPT Surcharge</span><span class="v" id="rAfaVal">-</span></div>
+                    <div class="row"><span class="l">Capacity Charge (4.55 sen/kWh)</span><span class="v" id="rCap">-</span></div>
+                    <div class="row"><span class="l">Network Charge (12.85 sen/kWh)</span><span class="v" id="rNet">-</span></div>
+                    <div class="row"><span class="l">Retail Charge (Fixed)</span><span class="v" id="rRetail">-</span></div>
+                    <div class="row"><span class="l">EE Incentive</span><span class="v" id="rEE">-</span></div>
+                    <div class="row"><span class="l">Service Tax (8%)</span><span class="v" id="rST">-</span></div>
+                    <div class="row"><span class="l">KWTBB (1.6%)</span><span class="v" id="rKW">-</span></div>
+                    <div class="total-row"><span>Total Bill (Before Solar)</span><span class="v" id="rTotal">-</span></div>
+                </div>
+            </div>
+
+            <div class="solar-card">
+                <h3>☀️ With Solar System</h3>
+                <div class="row" id="sSysRow" style="display:none;"><span class="l">Recommended System Size</span><span class="v" id="sSys">-</span></div>
+                <div class="row" id="sPanelRow" style="display:none;"><span class="l">Number of Panels</span><span class="v" id="sPanel">-</span></div>
+                <div class="row"><span class="l">Monthly Solar Generation</span><span class="v" id="sGen">-</span></div>
+                <div style="border-top:1px solid #a5d6a7; margin:8px 0;"></div>
+                <div class="row"><span class="l">Self-Consumed (used at home)</span><span class="v" id="sSelf">-</span></div>
+                <div class="row"><span class="l">Exported to Grid</span><span class="v" id="sExport">-</span></div>
+                <div class="row"><span class="l">Grid Import (Still from TNB)</span><span class="v" id="sImport">-</span></div>
+                <div style="border-top:1px solid #a5d6a7; margin:8px 0;"></div>
+                <div class="row"><span class="l">Energy Charge (on grid import)</span><span class="v" id="sEnergyAfter">-</span></div>
+                <div class="row"><span class="l">Energy Offset (NEM export credit)</span><span class="v" id="sOffset" style="color:#2e7d32;">-</span></div>
+                <div class="row"><span class="l">Capacity Charge</span><span class="v" id="sCapAfter">-</span></div>
+                <div class="row"><span class="l">Network Charge</span><span class="v" id="sNetAfter">-</span></div>
+                <div class="row"><span class="l">Retail Charge</span><span class="v" id="sRetailAfter">-</span></div>
+                <div class="row"><span class="l">EE Incentive</span><span class="v" id="sEEAfter" style="color:#2e7d32;">-</span></div>
+                <div class="row"><span class="l">Incentive Adjustment</span><span class="v" id="sAdjAfter">-</span></div>
+                <div class="row"><span class="l">Service Tax (8%)</span><span class="v" id="sSTAfter">-</span></div>
+                <div class="row"><span class="l">KWTBB (1.6%)</span><span class="v" id="sKWAfter">-</span></div>
+                <div style="border-top:1px solid #a5d6a7; margin:8px 0;"></div>
+                <div class="row"><span class="l"><strong>New Bill (After Solar)</strong></span><span class="v" id="sNewBill">-</span></div>
+                <div class="savings-highlight"><span>Monthly Savings</span><span id="sSave">-</span></div>
+            </div>
+        </div>
+
+        <p class="note" style="margin-top:16px; text-align:center;">
+            TNB RP4 tariff (Jul 2025). For estimation only.<br>
+            Solar savings based on NEM ATAP mechanism. Export offset matches client's energy charge rate. <span class="login-trigger" onclick="showLoginModal()">v2.1</span>
+        </p>
+    </div>
+    <div id="loginModal" class="login-modal" style="display:none;">
+        <div class="login-modal-content">
+            <h3>Staff Access</h3>
+            <input type="text" id="loginUser" placeholder="Username">
+            <input type="password" id="loginPass" placeholder="Password">
+            <button onclick="doLogin()">Login</button>
+            <p id="loginError" style="display:none; color:#c62828; font-size:0.85em;">Invalid credentials</p>
+            <button class="btn-close-modal" onclick="hideLoginModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+<script>
+// Authentication
+const AUTH_CREDS = { username: 'verdant', password: 'verdant123' };
+const AUTH_STORAGE_KEY = 'tnb_calc_auth';
+
+function isAuthenticated() { return localStorage.getItem(AUTH_STORAGE_KEY) === 'true'; }
+
+function applyAuthState() {
+    const authed = isAuthenticated();
+    const solarSection = document.getElementById('solarSection');
+    const solarCard = document.querySelector('.solar-card');
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (solarSection) solarSection.style.display = authed ? 'block' : 'none';
+    if (solarCard) solarCard.style.display = authed ? 'block' : 'none';
+    if (logoutBtn) logoutBtn.style.display = authed ? 'inline-block' : 'none';
+    const sSysRow = document.getElementById('sSysRow');
+    const sPanelRow = document.getElementById('sPanelRow');
+    if (sSysRow) sSysRow.style.display = authed ? 'flex' : 'none';
+    if (sPanelRow) sPanelRow.style.display = authed ? 'flex' : 'none';
+}
+
+function showLoginModal() { document.getElementById('loginModal').style.display = 'flex'; }
+function hideLoginModal() { document.getElementById('loginModal').style.display = 'none'; document.getElementById('loginError').style.display = 'none'; }
+
+function doLogin() {
+    const user = document.getElementById('loginUser').value.trim();
+    const pass = document.getElementById('loginPass').value;
+    if (user === AUTH_CREDS.username && pass === AUTH_CREDS.password) {
+        localStorage.setItem(AUTH_STORAGE_KEY, 'true');
+        hideLoginModal();
+        applyAuthState();
+    } else {
+        document.getElementById('loginError').style.display = 'block';
+    }
+}
+
+function doLogout() { localStorage.removeItem(AUTH_STORAGE_KEY); applyAuthState(); }
+
+// AFA/ICPT monthly rates (sen/kWh) - update this table when TNB announces changes
+// TNB typically announces rates every 6 months but they can vary by month
+const AFA_RATES = {
+    '2025-01': 0, '2025-02': 0, '2025-03': 0, '2025-04': 0, '2025-05': 0, '2025-06': 0,
+    '2025-07': 0, '2025-08': 0, '2025-09': 0, '2025-10': 0, '2025-11': 0, '2025-12': 0,
+    '2026-01': 0, '2026-02': 0, '2026-03': 0, '2026-04': 0, '2026-05': 0, '2026-06': 2.59,
+    '2026-07': 3.59, '2026-08': 3.59, '2026-09': 3.59, '2026-10': 3.59, '2026-11': 3.59, '2026-12': 3.59
+};
+
+function getCurrentAfaRate() {
+    const now = new Date();
+    const key = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    return AFA_RATES[key] || 0;
+}
+
+// kWh Breakdown
+function updateKwhBreakdown(householdKwh, evKwh) {
+    const card = document.getElementById('kwhBreakdown');
+    const total = householdKwh + evKwh;
+    if (total <= 0) { card.style.display = 'none'; return; }
+    card.style.display = 'block';
+    const housePct = (householdKwh / total) * 100;
+    const evPct = (evKwh / total) * 100;
+    document.getElementById('kwhBarHouse').style.width = housePct + '%';
+    document.getElementById('kwhBarEv').style.width = evPct + '%';
+    document.getElementById('kwhBarEv').style.display = evKwh > 0 ? 'block' : 'none';
+    document.getElementById('kwhEvRow').style.display = evKwh > 0 ? 'flex' : 'none';
+    document.getElementById('kwhHouseVal').textContent = householdKwh.toFixed(0) + ' kWh (' + housePct.toFixed(0) + '%)';
+    document.getElementById('kwhEvVal').textContent = evKwh > 0 ? evKwh.toFixed(0) + ' kWh (' + evPct.toFixed(0) + '%)' : '-';
+    document.getElementById('kwhTotalVal').innerHTML = '<strong>' + total.toFixed(0) + ' kWh</strong>';
+}
+
+// TNB RP4 Rates
+const T = { energy: 0.2703, energyHigh: 0.3703, energyThreshold: 1500, afa: 0, cap: 0.0455, net: 0.1285, retail: 10, stRate: 0.08, kwRate: 0.016, stThreshold: 600 };
+
+// Energy Efficiency Incentive lookup table (kWh bracket -> RM/kWh discount)
+const EE_TABLE = [
+    { max: 200, rate: -0.25 }, { max: 250, rate: -0.245 }, { max: 300, rate: -0.225 },
+    { max: 350, rate: -0.21 }, { max: 400, rate: -0.17 }, { max: 450, rate: -0.145 },
+    { max: 500, rate: -0.12 }, { max: 550, rate: -0.105 }, { max: 600, rate: -0.09 },
+    { max: 650, rate: -0.075 }, { max: 700, rate: -0.055 }, { max: 750, rate: -0.045 },
+    { max: 800, rate: -0.04 }, { max: 850, rate: -0.025 }, { max: 900, rate: -0.01 },
+    { max: 1000, rate: -0.005 }
+];
+
+function getEERate(kwh) {
+    if (kwh > 1000) return 0;
+    for (let i = 0; i < EE_TABLE.length; i++) {
+        if (kwh <= EE_TABLE[i].max) return EE_TABLE[i].rate;
+    }
+    return 0;
+}
+
+let n = 0;
+function add(name, w, h, q) {
+    n++;
+    const d = document.createElement('div');
+    d.className = 'appliance-row'; d.id = 'a'+n;
+    d.innerHTML = `<input value="${name}"><input type="number" value="${w}" min="0"><input type="number" value="${h}" min="0" step="0.5"><input type="number" value="${q}" min="1"><button class="btn-rm" onclick="document.getElementById('a${n}').remove()">X</button>`;
+    document.getElementById('appList').appendChild(d);
+}
+
+function toggleEV() { 
+    document.getElementById('evDet').classList.toggle('show', document.getElementById('evOn').checked); 
+    updateEvPreview();
+}
+function updateEff() {
+    const s = document.getElementById('evBatt');
+    document.getElementById('evEff').value = s.options[s.selectedIndex].getAttribute('data-eff');
+    updateEvPreview();
+}
+function updateEvPreview() {
+    const previewEl = document.getElementById('evPreview');
+    if (!document.getElementById('evOn').checked) {
+        previewEl.style.display = 'none';
+        return;
+    }
+    previewEl.style.display = 'block';
+    const km = parseFloat(document.getElementById('evKm').value) || 0;
+    const eff = parseFloat(document.getElementById('evEff').value) || 15;
+    const loss = parseFloat(document.getElementById('evLoss').value) || 12;
+    const monthlyKwh = km * eff / 100 * (1 + loss / 100) * 30;
+    document.getElementById('evPreviewVal').textContent = Math.round(monthlyKwh);
+}
+
+function getAppKwh() {
+    let t = 0;
+    document.querySelectorAll('#appList .appliance-row').forEach(r => {
+        const i = r.querySelectorAll('input');
+        t += (parseFloat(i[1].value)||0) * (parseFloat(i[2].value)||0) * (parseFloat(i[3].value)||1) * 30 / 1000;
+    });
+    return t;
+}
+
+function getEVKwh() {
+    if (!document.getElementById('evOn').checked) return 0;
+    const km = parseFloat(document.getElementById('evKm').value)||0;
+    const eff = parseFloat(document.getElementById('evEff').value)||15;
+    const loss = parseFloat(document.getElementById('evLoss').value)||12;
+    return km * eff / 100 * (1 + loss/100) * 30;
+}
+
+function calcBill(kwh) {
+    // Tiered energy charge: below 1500 kWh at 27.03 sen, AT OR ABOVE 1500 entire usage at 37.03 sen
+    let energy;
+    if (kwh < T.energyThreshold) {
+        energy = kwh * T.energy;
+    } else {
+        energy = kwh * T.energyHigh;
+    }
+    const afa = kwh * T.afa;
+    const cap = kwh * T.cap;
+    const net = kwh * T.net;
+    const retail = T.retail;
+    // EE Incentive based on consumption bracket
+    const eeRate = getEERate(kwh);
+    const eeIncentive = kwh * eeRate; // negative value = discount
+    let st = 0, kw = 0;
+    if (kwh > T.stThreshold) {
+        const excess = kwh - T.stThreshold;
+        const denganST = excess * (T.energy + T.afa + T.cap + T.net) + T.retail;
+        st = denganST * T.stRate;
+    }
+    if (kwh > T.stThreshold) {
+        kw = kwh * (T.energy + T.cap + T.net) * T.kwRate;
+    }
+    const total = energy + afa + cap + net + retail + eeIncentive + st + kw;
+    return { energy, afa, cap, net, retail, eeIncentive, eeRate, st, kw, total };
+}
+
+function calcAfterSolarBill(consumption, generation, selfRatio) {
+    // Blixify methodology:
+    // Self-consumed = consumption × self-consumption ratio (what's used during daytime)
+    // Exported = generation - self_consumed
+    // Grid Import = consumption - self_consumed
+    const selfConsumed = Math.min(consumption * selfRatio, generation);
+    const exported = generation - selfConsumed;
+    const gridImport = consumption - selfConsumed;
+
+    // After-solar bill components on grid import
+    let energyCharge;
+    if (gridImport < T.energyThreshold) {
+        energyCharge = gridImport * T.energy;
+    } else {
+        energyCharge = gridImport * T.energyHigh;
+    }
+
+    // NEM Export offset (credited at the SAME energy rate the client is charged)
+    const clientEnergyRate = gridImport < T.energyThreshold ? T.energy : T.energyHigh;
+    const energyOffset = -(exported * clientEnergyRate);
+
+    const capCharge = gridImport * T.cap;
+    const netCharge = gridImport * T.net;
+    const retailCharge = T.retail;
+    const afa = 0; // AFA = 0 in proposal system after solar
+
+    // EE Incentive on grid import
+    const eeRate = getEERate(gridImport);
+    const eeIncentive = gridImport * eeRate; // negative = discount
+
+    // Incentive adjustment: exported × |EE rate| (gives back incentive on exported portion)
+    const incentiveAdj = exported * Math.abs(eeRate); // positive value
+
+    // Service Tax & KWTBB on grid import portion (if > 600 kWh)
+    let st = 0, kw = 0;
+    if (gridImport > T.stThreshold) {
+        const excess = gridImport - T.stThreshold;
+        const denganST = excess * (T.energy + T.afa + T.cap + T.net) + T.retail;
+        st = denganST * T.stRate;
+    }
+    if (gridImport > T.stThreshold) {
+        kw = gridImport * (T.energy + T.cap + T.net) * T.kwRate;
+    }
+
+    const total = energyCharge + energyOffset + capCharge + netCharge + retailCharge + afa + eeIncentive + incentiveAdj + st + kw;
+
+    return {
+        selfConsumed, exported, gridImport,
+        energyCharge, energyOffset, capCharge, netCharge, retailCharge, afa,
+        eeIncentive, eeRate, incentiveAdj, st, kw,
+        total: Math.max(total, retailCharge) // minimum bill = retail charge
+    };
+}
+
+function calc() {
+    const direct = parseFloat(document.getElementById('directKwh').value);
+    const appKwh = getAppKwh();
+    const evKwh = getEVKwh();
+    const totalKwh = (direct > 0 ? direct : appKwh) + evKwh;
+
+    // Update kWh breakdown card
+    const householdKwh = direct > 0 ? direct : appKwh;
+    updateKwhBreakdown(householdKwh, evKwh);
+
+    // Show/hide EV kWh row in results
+    const evRow = document.getElementById('rEvKwh');
+    if (evKwh > 0) {
+        evRow.style.display = 'flex';
+        document.getElementById('rEvKwhVal').textContent = evKwh.toFixed(0) + ' kWh';
+    } else {
+        evRow.style.display = 'none';
+    }
+
+    if (totalKwh <= 0) { alert('Please add appliances or enter kWh.'); return; }
+
+    // AFA: use staff override if > 0, otherwise auto-detect from monthly table
+    const afaOverride = parseFloat(document.getElementById('afaOverride').value) || 0;
+    T.afa = (afaOverride > 0 ? afaOverride : getCurrentAfaRate()) / 100;
+
+    // Before solar bill
+    const bill = calcBill(totalKwh);
+
+    document.getElementById('rKwh').textContent = totalKwh.toFixed(0) + ' kWh';
+    document.getElementById('rEnergy').textContent = 'RM ' + bill.energy.toFixed(2);
+    const afaRow = document.getElementById('rAfa');
+    if (bill.afa > 0) {
+        afaRow.style.display = 'flex';
+        document.getElementById('rAfaVal').textContent = 'RM ' + bill.afa.toFixed(2);
+    } else {
+        afaRow.style.display = 'none';
+    }
+    document.getElementById('rCap').textContent = 'RM ' + bill.cap.toFixed(2);
+    document.getElementById('rNet').textContent = 'RM ' + bill.net.toFixed(2);
+    document.getElementById('rRetail').textContent = 'RM ' + bill.retail.toFixed(2);
+    document.getElementById('rEE').textContent = bill.eeIncentive < 0 ? 'RM ' + bill.eeIncentive.toFixed(2) : '-';
+    document.getElementById('rST').textContent = bill.st > 0 ? 'RM ' + bill.st.toFixed(2) : '-';
+    document.getElementById('rKW').textContent = bill.kw > 0 ? 'RM ' + bill.kw.toFixed(2) : '-';
+    document.getElementById('rTotal').textContent = 'RM ' + bill.total.toFixed(2);
+
+    // Solar sizing
+    const psh = parseFloat(document.getElementById('psh').value) || 3.36;
+    const panelWp = parseFloat(document.getElementById('panelWp').value) || 630;
+    const selfRatio = (parseFloat(document.getElementById('selfConsume').value) || 33) / 100;
+    const manualPanels = parseInt(document.getElementById('numPanels').value) || 0;
+    const monthlyPSH = psh * 30.36; // average days per month (matches Blixify: 3.36 PSH × 30.36 = 102)
+    const panelKw = panelWp / 1000;
+
+    let panels;
+    if (manualPanels > 0) {
+        panels = manualPanels;
+    } else {
+        // Auto-recommend: system generation = consumption - 300 kWh (base load assumption)
+        // This matches Blixify: consumption = generation + 300
+        const targetGen = Math.max(totalKwh - 300, totalKwh * 0.5); // at least 50% offset
+        panels = Math.ceil(targetGen / (panelKw * monthlyPSH));
+    }
+    const sysSize = panels * panelKw;
+    const monthGen = sysSize * monthlyPSH;
+
+    // After solar bill using Blixify methodology
+    const after = calcAfterSolarBill(totalKwh, monthGen, selfRatio);
+    const savings = bill.total - after.total;
+    const savingsPct = (savings / bill.total * 100).toFixed(0);
+
+    document.getElementById('sSys').textContent = sysSize.toFixed(2) + ' kWp';
+    document.getElementById('sPanel').textContent = panels + ' panels (' + panelWp + 'Wp)';
+    document.getElementById('sGen').textContent = monthGen.toFixed(0) + ' kWh';
+    const consumedPctOfGen = monthGen > 0 ? (after.selfConsumed / monthGen * 100).toFixed(0) : 0;
+    document.getElementById('sSelf').textContent = after.selfConsumed.toFixed(0) + ' kWh (' + consumedPctOfGen + '% of generation)';
+    document.getElementById('sExport').textContent = after.exported.toFixed(0) + ' kWh (' + (100 - consumedPctOfGen) + '%)';
+    document.getElementById('sImport').textContent = after.gridImport.toFixed(0) + ' kWh';
+    document.getElementById('sEnergyAfter').textContent = 'RM ' + after.energyCharge.toFixed(2);
+    document.getElementById('sOffset').textContent = 'RM ' + after.energyOffset.toFixed(2);
+    document.getElementById('sCapAfter').textContent = 'RM ' + after.capCharge.toFixed(2);
+    document.getElementById('sNetAfter').textContent = 'RM ' + after.netCharge.toFixed(2);
+    document.getElementById('sRetailAfter').textContent = 'RM ' + after.retailCharge.toFixed(2);
+    document.getElementById('sEEAfter').textContent = after.eeIncentive < 0 ? 'RM ' + after.eeIncentive.toFixed(2) : '-';
+    document.getElementById('sAdjAfter').textContent = after.incentiveAdj > 0 ? 'RM +' + after.incentiveAdj.toFixed(2) : '-';
+    document.getElementById('sSTAfter').textContent = after.st > 0 ? 'RM ' + after.st.toFixed(2) : '-';
+    document.getElementById('sKWAfter').textContent = after.kw > 0 ? 'RM ' + after.kw.toFixed(2) : '-';
+    document.getElementById('sNewBill').textContent = 'RM ' + after.total.toFixed(2);
+    document.getElementById('sSave').textContent = 'RM ' + savings.toFixed(2) + '/month (' + savingsPct + '%)';
+
+    document.getElementById('res').classList.add('show');
+    document.getElementById('res').scrollIntoView({ behavior: 'smooth' });
+}
+
+// Wire EV preview live updates
+document.getElementById('evKm').addEventListener('input', updateEvPreview);
+document.getElementById('evEff').addEventListener('input', updateEvPreview);
+document.getElementById('evLoss').addEventListener('input', updateEvPreview);
+document.getElementById('evBatt').addEventListener('change', updateEvPreview);
+
+// Apply auth state on load
+document.addEventListener('DOMContentLoaded', function() {
+    applyAuthState();
+
+    // Display current AFA rate
+    const currentAfa = getCurrentAfaRate();
+    document.getElementById('afaDisplay').textContent = currentAfa > 0 ? currentAfa.toFixed(2) : '0 (no surcharge)';
+    const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    document.getElementById('afaMonth').textContent = monthNames[new Date().getMonth()] + ' ' + new Date().getFullYear();
+});
+</script>
+</body>
+</html>
