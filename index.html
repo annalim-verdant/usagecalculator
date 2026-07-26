@@ -158,6 +158,7 @@
     <div class="content">
         <div class="info-bar">
             <strong>TNB Tariff (RP4, effective Jul 2025):</strong> Energy 27.03 sen/kWh (37.03 if usage &ge; 1500 kWh) + Capacity 4.55 + Network 12.85 + RM10 retail (fixed) | Tax applies &gt; 600 kWh
+            <br><strong>Current AFA/ICPT:</strong> <span id="afaDisplay">-</span> sen/kWh (auto-detected for <span id="afaMonth">-</span>)
         </div>
 
         <!-- Appliances -->
@@ -298,8 +299,12 @@
                     <label>Self-Consumption Ratio (%)</label>
                     <input type="number" id="selfConsume" value="33" min="0" max="100">
                 </div>
+                <div class="form-group">
+                    <label>AFA Override (sen/kWh, 0 = use auto)</label>
+                    <input type="number" id="afaOverride" value="0" step="0.01" min="0">
+                </div>
             </div>
-            <p class="note">Auto-recommend sizes system to match consumption minus base load (300 kWh). Set panels manually to override. Self-consumed = consumption × SC ratio. Export offset matches client's energy rate.</p>
+            <p class="note">Auto-recommend sizes system to match consumption minus base load (300 kWh). Set panels manually to override. Self-consumed = consumption × SC ratio. Export offset matches client's energy rate. AFA Override: enter a value to override auto-detected rate (0 = use current month's rate from lookup table).</p>
         </div>
 
         <button class="btn-calc" onclick="calc()">Calculate Bill &amp; Solar Savings</button>
@@ -338,6 +343,7 @@
                     <div class="row"><span class="l">Monthly Consumption</span><span class="v" id="rKwh">-</span></div>
                     <div class="row" id="rEvKwh" style="display:none;"><span class="l">EV Charging Consumption</span><span class="v" id="rEvKwhVal">-</span></div>
                     <div class="row"><span class="l">Energy Charge (27.03 sen | 37.03 if &ge;1500 kWh)</span><span class="v" id="rEnergy">-</span></div>
+                    <div class="row" id="rAfa" style="display:none;"><span class="l">AFA / ICPT Surcharge</span><span class="v" id="rAfaVal">-</span></div>
                     <div class="row"><span class="l">Capacity Charge (4.55 sen/kWh)</span><span class="v" id="rCap">-</span></div>
                     <div class="row"><span class="l">Network Charge (12.85 sen/kWh)</span><span class="v" id="rNet">-</span></div>
                     <div class="row"><span class="l">Retail Charge (Fixed)</span><span class="v" id="rRetail">-</span></div>
@@ -426,6 +432,21 @@ function doLogin() {
 }
 
 function doLogout() { localStorage.removeItem(AUTH_STORAGE_KEY); applyAuthState(); }
+
+// AFA/ICPT monthly rates (sen/kWh) - update this table when TNB announces changes
+// TNB typically announces rates every 6 months but they can vary by month
+const AFA_RATES = {
+    '2025-01': 0, '2025-02': 0, '2025-03': 0, '2025-04': 0, '2025-05': 0, '2025-06': 0,
+    '2025-07': 0, '2025-08': 0, '2025-09': 0, '2025-10': 0, '2025-11': 0, '2025-12': 0,
+    '2026-01': 0, '2026-02': 0, '2026-03': 0, '2026-04': 0, '2026-05': 0, '2026-06': 2.59,
+    '2026-07': 3.59, '2026-08': 3.59, '2026-09': 3.59, '2026-10': 3.59, '2026-11': 3.59, '2026-12': 3.59
+};
+
+function getCurrentAfaRate() {
+    const now = new Date();
+    const key = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    return AFA_RATES[key] || 0;
+}
 
 // kWh Breakdown
 function updateKwhBreakdown(householdKwh, evKwh) {
@@ -617,11 +638,22 @@ function calc() {
 
     if (totalKwh <= 0) { alert('Please add appliances or enter kWh.'); return; }
 
+    // AFA: use staff override if > 0, otherwise auto-detect from monthly table
+    const afaOverride = parseFloat(document.getElementById('afaOverride').value) || 0;
+    T.afa = (afaOverride > 0 ? afaOverride : getCurrentAfaRate()) / 100;
+
     // Before solar bill
     const bill = calcBill(totalKwh);
 
     document.getElementById('rKwh').textContent = totalKwh.toFixed(0) + ' kWh';
     document.getElementById('rEnergy').textContent = 'RM ' + bill.energy.toFixed(2);
+    const afaRow = document.getElementById('rAfa');
+    if (bill.afa > 0) {
+        afaRow.style.display = 'flex';
+        document.getElementById('rAfaVal').textContent = 'RM ' + bill.afa.toFixed(2);
+    } else {
+        afaRow.style.display = 'none';
+    }
     document.getElementById('rCap').textContent = 'RM ' + bill.cap.toFixed(2);
     document.getElementById('rNet').textContent = 'RM ' + bill.net.toFixed(2);
     document.getElementById('rRetail').textContent = 'RM ' + bill.retail.toFixed(2);
@@ -685,7 +717,15 @@ document.getElementById('evLoss').addEventListener('input', updateEvPreview);
 document.getElementById('evBatt').addEventListener('change', updateEvPreview);
 
 // Apply auth state on load
-document.addEventListener('DOMContentLoaded', applyAuthState);
+document.addEventListener('DOMContentLoaded', function() {
+    applyAuthState();
+
+    // Display current AFA rate
+    const currentAfa = getCurrentAfaRate();
+    document.getElementById('afaDisplay').textContent = currentAfa > 0 ? currentAfa.toFixed(2) : '0 (no surcharge)';
+    const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    document.getElementById('afaMonth').textContent = monthNames[new Date().getMonth()] + ' ' + new Date().getFullYear();
+});
 </script>
 </body>
 </html>
