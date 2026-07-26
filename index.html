@@ -350,8 +350,8 @@
 
             <div class="solar-card">
                 <h3>☀️ With Solar System</h3>
-                <div class="row" style="display:none;"><span class="l">Recommended System Size</span><span class="v" id="sSys">-</span></div>
-                <div class="row" style="display:none;"><span class="l">Number of Panels</span><span class="v" id="sPanel">-</span></div>
+                <div class="row" id="sSysRow" style="display:none;"><span class="l">Recommended System Size</span><span class="v" id="sSys">-</span></div>
+                <div class="row" id="sPanelRow" style="display:none;"><span class="l">Number of Panels</span><span class="v" id="sPanel">-</span></div>
                 <div class="row"><span class="l">Monthly Solar Generation</span><span class="v" id="sGen">-</span></div>
                 <div style="border-top:1px solid #a5d6a7; margin:8px 0;"></div>
                 <div class="row"><span class="l">Self-Consumed (used at home)</span><span class="v" id="sSelf">-</span></div>
@@ -404,6 +404,10 @@ function applyAuthState() {
     if (solarSection) solarSection.style.display = authed ? 'block' : 'none';
     if (solarCard) solarCard.style.display = authed ? 'block' : 'none';
     if (logoutBtn) logoutBtn.style.display = authed ? 'inline-block' : 'none';
+    const sSysRow = document.getElementById('sSysRow');
+    const sPanelRow = document.getElementById('sPanelRow');
+    if (sSysRow) sSysRow.style.display = authed ? 'flex' : 'none';
+    if (sPanelRow) sPanelRow.style.display = authed ? 'flex' : 'none';
 }
 
 function showLoginModal() { document.getElementById('loginModal').style.display = 'flex'; }
